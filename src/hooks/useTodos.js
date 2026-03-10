@@ -35,19 +35,22 @@ export function useTodos(uid) {
     if (!text.trim()) return;
     await addDoc(collection(db, 'users', uid, 'todos'), {
       text,
-      done: false,
+      status: 'todo', // 'todo' | 'done' | 'stopped'
       createdAt: Date.now(),
     });
   };
 
-  const toggle = async (id, done) => {
-    // 불변성: Firestore 문서만 업데이트, 로컬 배열 직접 수정 안 함
-    await updateDoc(doc(db, 'users', uid, 'todos', id), { done: !done });
+  // 클릭할 때마다 todo → done → stopped → todo 순환
+  const cycleStatus = async (id, currentStatus) => {
+    const next = { todo: 'done', done: 'stopped', stopped: 'todo' };
+    await updateDoc(doc(db, 'users', uid, 'todos', id), {
+      status: next[currentStatus] ?? 'done',
+    });
   };
 
   const remove = async (id) => {
     await deleteDoc(doc(db, 'users', uid, 'todos', id));
   };
 
-  return { todos, addTodo, toggle, remove };
+  return { todos, addTodo, cycleStatus, remove };
 }
