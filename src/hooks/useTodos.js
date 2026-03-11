@@ -14,33 +14,26 @@ import { db } from '../firebase';
 export function useTodos(uid) {
   const [todos, setTodos] = useState([]);
 
-  // 사용자별 Firestore 컬렉션 실시간 구독
   useEffect(() => {
     if (!uid) return;
-
-    const q = query(
-      collection(db, 'users', uid, 'todos'),
-      orderBy('createdAt', 'asc')
-    );
-
+    const q = query(collection(db, 'users', uid, 'todos'), orderBy('createdAt', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       setTodos(data);
     });
-
     return unsubscribe;
   }, [uid]);
 
-  const addTodo = async (text) => {
+  const addTodo = async (text, dueDate = null) => {
     if (!text.trim()) return;
     await addDoc(collection(db, 'users', uid, 'todos'), {
       text,
-      status: 'todo', // 'todo' | 'done' | 'stopped'
+      status: 'todo',
       createdAt: Date.now(),
+      dueDate: dueDate ?? null,
     });
   };
 
-  // 클릭할 때마다 todo → done → stopped → todo 순환
   const cycleStatus = async (id, currentStatus) => {
     const next = { todo: 'done', done: 'stopped', stopped: 'todo' };
     await updateDoc(doc(db, 'users', uid, 'todos', id), {
@@ -52,5 +45,11 @@ export function useTodos(uid) {
     await deleteDoc(doc(db, 'users', uid, 'todos', id));
   };
 
-  return { todos, addTodo, cycleStatus, remove };
+  const updateDueDate = async (id, dueDate) => {
+    await updateDoc(doc(db, 'users', uid, 'todos', id), {
+      dueDate: dueDate ?? null,
+    });
+  };
+
+  return { todos, addTodo, cycleStatus, remove, updateDueDate };
 }

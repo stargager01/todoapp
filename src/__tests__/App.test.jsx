@@ -53,7 +53,7 @@ describe('TODO 앱 기본 기능', () => {
     fireEvent.change(input, { target: { value: '장보기' } });
     fireEvent.click(screen.getByText('추가'));
 
-    expect(mockAddTodo).toHaveBeenCalledWith('장보기');
+    expect(mockAddTodo).toHaveBeenCalledWith('장보기', null);
   });
 
   it('삭제 버튼을 누르면 remove가 호출된다', () => {
